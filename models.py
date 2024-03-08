@@ -15,7 +15,9 @@ class LIF(Behavior):
         self.tau_r = self.parameter("tau_r", 15)
         self.tau_decay = self.parameter("tau_decay", 2)
         self.theta_reset = self.parameter("theta_reset", 30)
-            
+        self.theta = self.parameter("theta", -35)
+        self.delta_thresh = self.parameter("delta_thresh", 5)
+        ng.theta = ng.vector(mode=self.threshold)   
         ng.num_spikes = ng.vector(mode=0)    # number of spikes 
         ng.v = ng.vector(mode=self.u_rest)  # initialize v with u-rest
         ng.spikes = ng.vector(mode=0)       # save spike times
@@ -34,12 +36,18 @@ class LIF(Behavior):
                
 		# firing
         else:
-            if ng.v >= self.theta_reset:
+            if ng.v >= ng.theta:
                 ng.num_spikes += 1
                 ng.refractory_time = self.tau_r
 			
             # reset
-            # ng.spike = ng.v >= self.threshold
+            ng.spike = ng.v >= ng.theta
+            if ng.spike:
+                dtheta_dt = (-(ng.theta - self.threshold) + self.theta * self.delta_thresh * ng.num_spikes) / self.tau
+            else:
+                dtheta_dt = (self.threshold - ng.theta) / self.tau_decay 
+
+            ng.theta += dtheta_dt
             # ng.v[ng.spike] = self.u_reset
             ng.v += ((leakage + currents) / self.tau) * ng.network.dt 
         
@@ -62,6 +70,9 @@ class ELIF(Behavior):
         self.tau_r = self.parameter("tau_r", 15)
         self.tau_decay = self.parameter("tau_decay", 2)
         self.theta_reset = self.parameter("theta_reset", 30)
+        self.theta = self.parameter("theta", -35)
+        self.delta_thresh = self.parameter("delta_thresh", 5)
+        ng.theta = ng.vector(mode=self.threshold) 
 
         ng.v = ng.vector(mode=self.u_rest)	
         ng.spikes = ng.vector(mode=0)
@@ -84,17 +95,25 @@ class ELIF(Behavior):
 
         else:
             # firing
-            if ng.v >= self.theta_reset:
+            if ng.v >= ng.theta:
                 ng.num_spikes += 1
                 ng.refractory_time = self.tau_r
                         
-            ng.spike = ng.v >= self.theta_reset
+            ng.spike = ng.v >= ng.theta
             # reset
-            if ng.v < self.theta_reset:
+            if ng.v < ng.theta:
                 membrane_potential_change = linear + F + ri
                 ng.v += (membrane_potential_change / self.tau) * ng.network.dt
-                if ng.v > self.theta_reset:
+                if ng.v > ng.theta:
                     ng.v = ng.vector(mode=self.theta_reset)
+
+            ng.spike = ng.v >= ng.theta
+            if ng.spike:
+                dtheta_dt = (-(ng.theta - self.threshold) + self.theta * self.delta_thresh * ng.num_spikes) / self.tau
+            else:
+                dtheta_dt = (self.threshold - ng.theta) / self.tau_decay 
+
+            ng.theta += dtheta_dt
 
 
 # Adaptive Exponential LIF
@@ -113,6 +132,9 @@ class AELIF(Behavior):
         self.tau_r = self.parameter("tau_r", 15)
         self.tau_decay = self.parameter("tau_decay", 2)
         self.theta_reset = self.parameter("theta_reset", 30)
+        self.theta = self.parameter("theta", -35)
+        self.delta_thresh = self.parameter("delta_thresh", 5)
+        ng.theta = ng.vector(mode=self.threshold) 
 
         ng.v = ng.vector(mode=self.u_rest)
         ng.spikes = ng.vector(mode=0)
@@ -134,11 +156,11 @@ class AELIF(Behavior):
 
         else:
             # firing
-            if ng.v >= self.theta_reset:
+            if ng.v >= ng.theta:
                 ng.num_spikes += 1
                 ng.refractory_time = self.tau_r
 
-            ng.spike = ng.v >= self.theta_reset
+            ng.spike = ng.v >= ng.theta
 
 
             # dynamic
@@ -148,10 +170,18 @@ class AELIF(Behavior):
             F = self.delta_t * np.exp(v1)
             u = linear + F + ri
             dvdt = u - self.R * ng.w
-            if ng.v < self.theta_reset:
+            if ng.v < ng.theta:
                 ng.v += dvdt / self.tau_m
-                if ng.v > self.theta_reset:
+                if ng.v > ng.theta:
                     ng.v = ng.vector(mode=self.theta_reset)
+
+            ng.spike = ng.v >= ng.theta
+            if ng.spike:
+                dtheta_dt = (-(ng.theta - self.threshold) + self.theta * self.delta_thresh * ng.num_spikes) / self.tau_m
+            else:
+                dtheta_dt = (self.threshold - ng.theta) / self.tau_decay 
+
+            ng.theta += dtheta_dt
 
             
         # adaptation
