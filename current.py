@@ -53,7 +53,6 @@ class SinCurrent(Behavior):
 
 # set a sinusoidal current with adding random noise to it
 class NoisyCurrent(Behavior):
-	random.seed = 42
 	def initialize(self, ng):
 		self.amplitude = self.parameter("amplitude")
 		self.frequency = self.parameter("frequency")
@@ -64,4 +63,16 @@ class NoisyCurrent(Behavior):
 		noise2 = random.random()
 		current_value = self.amplitude * np.sin(2 * np.pi * self.frequency * ng.network.iteration * ng.network.dt * noise)
 		ng.I += current_value * noise2
+
+
+# set a constant current with adding random noise to it
+class NoisyConstantCurrent(Behavior):
+	def initialize(self, ng):
+		self.value = self.parameter("value")
+		ng.I = ng.vector(mode=self.value)
+
+	def forward(self, ng):
+		ng.I = self.value
+		noise = random.randint(-20, 20)   # add random noise to current value
+		ng.I += noise
 		
