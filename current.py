@@ -51,9 +51,9 @@ class SinCurrent(Behavior):
 		
 
 
-
 # set a sinusoidal current with adding random noise to it
 class NoisyCurrent(Behavior):
+	random.seed = 42
 	def initialize(self, ng):
 		self.amplitude = self.parameter("amplitude")
 		self.frequency = self.parameter("frequency")
