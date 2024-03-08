@@ -20,26 +20,26 @@ class LIF(Behavior):
         ng.refractory_time = 0
 
     def forward(self, ng):
-        # dynamic
-		ng.spike = ng.v >= self.threshold
-		leakage = -(ng.v - self.u_rest)
-		currents = self.R * ng.I
+
+        ng.spike = ng.v >= self.threshold
+        leakage = -(ng.v - self.u_rest)
+        currents = self.R * ng.I
           
 		# refractory period
-		if ng.refractory_time > 0:
-			ng.refractory_time -= 1
-			ng.v += (leakage  / self.tau) * ng.network.dt  
+        if ng.refractory_time > 0:
+            ng.refractory_time -= 1
+            ng.v += (leakage  / self.tau) * ng.network.dt  
                
 		# firing
-		else:
-			if ng.v >= self.threshold:
-				ng.num_spikes += 1
-				ng.refractory_time = self.tau_r
+        else:
+            if ng.v >= self.threshold:
+                ng.num_spikes += 1
+                ng.refractory_time = self.tau_r
 			
             # reset
-			ng.spike = ng.v >= self.threshold
-			ng.v[ng.spike] = self.u_reset
-			ng.v += ((leakage + currents) / self.tau) * ng.network.dt 
+            ng.spike = ng.v >= self.threshold
+            ng.v[ng.spike] = self.u_reset
+            ng.v += ((leakage + currents) / self.tau) * ng.network.dt 
         
 
 				
