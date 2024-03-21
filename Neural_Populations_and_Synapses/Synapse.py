@@ -4,7 +4,7 @@ import torch
 
 class SynFun(Behavior):
 	def initialize(self, sg):
-		sg.W = sg.matrix(mode="normal(0.5, 0.3)")
+		sg.W = sg.matrix(mode=50)
 		sg.I = sg.dst.vector()
 
 	def forward(self, sg):
