@@ -9,6 +9,7 @@ class SynFun(Behavior):
 
 	def forward(self, sg):
 		sg.I = torch.sum(sg.W[sg.src.spike], axis=0)
+		print(sg.W)
 
 class InpSyn(Behavior):
 	def forward(self, ng):
