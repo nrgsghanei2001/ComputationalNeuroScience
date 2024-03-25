@@ -8,9 +8,11 @@ class ConstantCurrent(Behavior):
     def initialize(self, ng):
         self.value = self.parameter("value", None)
         ng.I = ng.vector(self.value)   # initialize I vector with given value
+        ng.inputI = ng.vector(self.value)   # initialize I vector with given value
 
     def forward(self, ng):
         ng.I = ng.vector(self.value)    # at each iteration the current is the constant value
+        ng.inputI = ng.vector(self.value)    # at each iteration the current is the constant value
 
 
 # set step current. Start with zero and from t0 to the end I is constant value

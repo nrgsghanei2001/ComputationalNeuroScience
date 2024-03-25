@@ -18,7 +18,7 @@ class LIF(Behavior):
 		ng.spike = ng.v >= self.threshold
 		ng.v[ng.spike] = self.u_reset
 		# ng.population_activity = ng.vector(mode=0)
-		# ng.population_activity = 0
+		ng.population_activity = 0
 		ng.num_spikes = 0
 		
 	def forward(self, ng):
@@ -36,7 +36,7 @@ class LIF(Behavior):
 		ng.num_spikes = torch.sum(ng.spike).item()
 		# print(ng.num_spikes)
 		# ng.population_activity = ng.vector(mode=0)
-		# ng.population_activity += ng.num_spikes / self.N
+		ng.population_activity = ng.num_spikes / self.N
 		# print(ng.population_activity)
 		#reset
 		ng.v[ng.spike] = self.u_reset
