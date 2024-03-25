@@ -4,12 +4,20 @@ import torch
 
 class SynFun(Behavior):
 	def initialize(self, sg):
-		sg.W = sg.matrix(mode=50)
+		sg.W = sg.matrix(mode=0)
 		sg.I = sg.dst.vector()
+		self.is_inhibitory = self.parameter("is_inhibitory", False)
 
 	def forward(self, sg):
 		sg.I = torch.sum(sg.W[sg.src.spike], axis=0)
-		print(sg.W)
+
+		if self.is_inhibitory:
+			sg.I *= -1
+
+		# print("I ",sg.I)
+		# print("W ",sg.W)
+		# print("spike ",sg.src.spike)
+		# print()
 
 class InpSyn(Behavior):
 	def forward(self, ng):

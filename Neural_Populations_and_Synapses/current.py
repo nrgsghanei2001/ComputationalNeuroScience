@@ -73,6 +73,6 @@ class NoisyConstantCurrent(Behavior):
 
 	def forward(self, ng):
 		ng.I = ng.vector(self.value)
-		noise = random.randint(-10, 10)   # add random noise to current value
+		noise = random.randint(0, 5)   # add random noise to current value
 		ng.I += noise
 		
