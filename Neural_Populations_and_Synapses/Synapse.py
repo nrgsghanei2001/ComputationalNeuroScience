@@ -10,16 +10,11 @@ class SynFun(Behavior):
 
 	def forward(self, sg):
 		sg.I = torch.sum(sg.W[sg.src.spike], axis=0)
-
 		if self.is_inhibitory:
 			sg.I *= -1
 
-		# print("I ",sg.I)
-		# print("W ",sg.W)
-		# print("spike ",sg.src.spike)
-		# print()
 
-class InpSyn(Behavior):
+class InpSyn(Behavior):	
 	def forward(self, ng):
 		for syn in ng.afferent_synapses["All"]:
-			ng.I += syn.I 
+			ng.I += (syn.I / ng.N)

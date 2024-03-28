@@ -75,6 +75,33 @@ class NoisyConstantCurrent(Behavior):
 
 	def forward(self, ng):
 		ng.I = ng.vector(self.value)
-		noise = random.randint(0, 5)   # add random noise to current value
+		noise = random.randint(-10, 10)   # add random noise to current value
 		ng.I += noise
+
+
+# set a staircase current with adding random noise to it
+class NoisyStairCurrent(Behavior):
+	def initialize(self, ng):
+		self.value0 = self.parameter("value0")   # first value of I
+		self.value1 = self.parameter("value1")   # second value of I
+		self.currentval = self.value0
+		self.t0 = self.parameter("t0")           
+		self.t = self.parameter("t")
+		ng.I = ng.vector(mode=self.value0)
+
+	def forward(self, ng):
+		
+		if (ng.network.iteration * ng.network.dt) >= self.t0:
+			if (ng.network.iteration * ng.network.dt) % self.t == 0:         # after t iterations reset the current
+				ng.I = ng.vector(mode=self.currentval)
+				ng.I += ng.vector(mode=self.value1) * ng.network.dt
+				self.currentval += self.value1
+				noise = random.randint(-10, 10)   # add random noise to current value
+				ng.I += noise
+			else:
+				ng.I = ng.vector(mode=self.currentval)
+		else:
+			ng.I = ng.vector(mode=self.value0)
+
+		
 		
