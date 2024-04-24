@@ -9,7 +9,6 @@ class SynFun(Behavior):
 		self.is_inhibitory = self.parameter("is_inhibitory", False)
 
 	def forward(self, sg):
-		# print(sg.src.spike)
 		sg.I = torch.sum(sg.W[sg.src.spike], axis=0)
 		if self.is_inhibitory:
 			sg.I *= -1
