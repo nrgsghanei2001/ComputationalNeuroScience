@@ -32,101 +32,67 @@ class TimeToFirstSpikeEncoding:
 
 
 class GaussianEncoding:
-
-    def __init__(self, time, num_neurons, data):
-        self.time = time
-        self.num_neurons = num_neurons
-        self.data = data
-        self.std = 0.5
-
-    def scale_data(self):
-        _data = self.data.flatten()
-        times = self.num_neurons - (_data * (self.num_neurons / _data.max())).long()
-        return times
-    
-    def gaussian_distribution(self, x):
-        gaussian = []
-        print(x)
-        for mean in range(self.num_neurons):
-            gaussian.append((1/(self.std*np.sqrt(2*np.pi))) * np.e ** ((-1/2)*((x-mean/self.std )** 2)))
-        return(gaussian)
-    
-    def encode(self):
-        times = self.scale_data()
-        spikes = torch.zeros((self.time, self.num_neurons))
-        # for j in range(self.num_neurons):
-        #     for i in range(self.time):
-        #         if i == times[j]:
-        #             spikes[i][j] = 1
-        for i in times:
-            gd = self.gaussian_distribution(i.item())
-            for j, x in enumerate(gd):
-                if x >= 0.01:
-                    print(x, end=" ")
-            print()
-
-        
-        return spikes
-
-
-class PositionEncoder:
     """
-    Position coding.
+    Gaussian Encoding.
+    Each pixel has n neurons representing a normal distribution with mean of i.
+    The neuron that has higher value for given pixel, spikes sooner.
+    Values below a threshold are being ignored.
     """
 
-    def __init__(self, data, time, node_n, range_data=(0, 255), std=0.5):
-        self.data = data
-        self.time = time
-        self.node_n = node_n
+    def __init__(self, data, time, num_nodes, range_data=(0, 255), std=0.5):
+        self.data       = data
+        self.time       = time
+        self.num_nodes  = num_nodes
         self.range_data = range_data
-        self.std = std
-
-        # Making gaussian functions represnting our nodes
-        self.functions = [self.gaussianFunc(i/self.node_n, self.std) for i in range(self.node_n)]
+        self.std        = std
+        self.gaussian   = [self.calc_gaussian(i/self.num_nodes, self.std) for i in range(self.num_nodes)] # gaussian distribution for nodes
         
-    def gaussianFunc(self, mean, std) -> callable:
+
+    def calc_gaussian(self, mean, std) -> callable:
         def f(x):
-            return (1/(std*np.sqrt(2*np.pi))) * np.e ** ((-1/2)*((x-mean/std )** 2))
+            return (1/(std*np.sqrt(2*np.pi))) * (np.e ** ((-1/2)*((x-mean/std )** 2)))
         return f
 
-    def encode(self):
+
+    def scale_data(self):
         self.data = self.data.flatten()
-        shape = (self.data.shape)[0]
         self.data = self.data.long() / self.range_data[1]
-        
-        # spikes = torch.zeros(self.node_n, self.time)
-        times = torch.zeros(self.node_n, shape)
-        times2 = torch.zeros(shape, self.node_n)
-        k = 0
-        for i in range(len(self.functions)):
-            data_ = self.data.clone()        
-            data_.apply_(self.functions[i])
-            data_ = abs(data_ - 1/(self.std*np.sqrt(2*np.pi)))
-            for j in range(shape):
-                times[k][j] = data_[j]  
-            k += 1
-        maxx = 0
-        for i in range(times2.shape[0]):
-            for j in range(times2.shape[1]):
-                times2[i][j] = times[j][i]
-                if times2[i][j] > maxx:
-                    maxx = times2[i][j]
-        print(maxx)
-        times3 = torch.zeros(shape, self.node_n)
-        for i in range(times2.shape[0]):
-            for j in range(times2.shape[1]):
-                if times2[i][j] > 0.1:
-                    x = (times2[i][j] - 0.1) / (maxx - 0.1)
+
+
+    def encode(self):
+        self.scale_data()
+        shape = (self.data.shape)[0]
+
+        times = torch.zeros(self.num_nodes, shape)
+        for k, calc_gaussian in enumerate(self.gaussian):   # calculate each gaussian value for each pixel
+            modified_data = self.data.clone().apply_(calc_gaussian)
+            difference = torch.abs(modified_data - 1 / (self.std * np.sqrt(2 * np.pi)))
+            times[k] = difference
+
+        max_value = 0
+        times_T = torch.zeros(shape, self.num_nodes)    # transpose the values
+        for i in range(times_T.shape[0]):
+            for j in range(times_T.shape[1]):
+                times_T[i, j] = times[j, i]
+                max_value = max(max_value, times_T[i, j])
+
+        threshold = 0.1
+        times = torch.zeros(shape, self.num_nodes)
+        for i in range(times_T.shape[0]):                  # find the time that each neuron is being active due to threshold and interval
+            for j in range(times_T.shape[1]):
+                if times_T[i, j] > threshold:
+                    x = (times_T[i, j] - threshold) / (max_value - threshold)
                     x = 1 - x
-                    times3[i][j] = int(x * self.time)
+                    times[i, j] = int(x * self.time)
                 else:
-                    times3[i][j] = -1
-        print(times3)
-        spikes = torch.zeros(self.time, self.node_n * shape)
-        for i in range(times2.shape[0]):
-            for j in range(times2.shape[1]):
-                if times3[i][j] != -1:
-                    spikes[int(times3[i][j].item())][i*self.node_n + j] = 1
+                    times[i, j] = -1
+
+        spikes = torch.zeros(self.time, self.num_nodes * shape)       # build spike pattern
+        for i in range(times_T.shape[0]):
+            for j in range(times_T.shape[1]):
+                if times[i][j] != -1:
+                    spikes[int(times[i][j].item())][i*self.num_nodes + j] = 1
+                    
         return spikes
      
         
