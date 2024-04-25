@@ -3,26 +3,30 @@ import numpy as np
 
 
 class TimeToFirstSpikeEncoding:
-    
-    def __init__(self, data, time, num_neurons):
-        self.time = time
-        self.num_neurons = num_neurons
-        self.data = data
+    """
+    Time-to-First-Spike encoding
+    Each neuron represents a pixel and the value of it, 
+    is the time that neuron spikes.
+    """
+     
+    def __init__(self, data, time):
+        self.time        = time    # simulation time
+        self.data        = data  # input stimuli (image)
+        self.num_neurons = self.data.shape[0] * self.data.shape[1]   # number of neurons
 
-    def scale_data(self):
-        _data = self.data.flatten()
-        times = self.time - (_data * (self.time / _data.max())).long()
+    def scale_data(self):     # map pixels values to interval of simulation time
+        data  = self.data.flatten()
+        times = self.time - (data * (self.time / data.max())).long()
         return times
 
     def encode(self):
-        times = self.scale_data()
+        times  = self.scale_data()
         spikes = torch.zeros((self.time, self.num_neurons))
-        for j in range(self.num_neurons):
-            for i in range(self.time):
-                if i == times[j]:
-                    spikes[i][j] = 1
-
-        
+        for neuron_index in range(self.num_neurons):
+            for time_index in range(self.time):
+                if time_index == times[neuron_index]:
+                    spikes[time_index, neuron_index] = 1   # build spike pattern
+ 
         return spikes
 
 
