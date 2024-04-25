@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-
+import torch.distributions as dist
 
 class TimeToFirstSpikeEncoding:
     """
@@ -92,42 +92,41 @@ class GaussianEncoding:
             for j in range(times_T.shape[1]):
                 if times[i][j] != -1:
                     spikes[int(times[i][j].item())][i*self.num_nodes + j] = 1
-                    
+
         return spikes
      
         
 
-class PoissonEncoder:
+class PoissonEncoding:
     """
-    Poisson coding.
-
-    Implement Poisson coding.
+    Poisson Encoding.
+    Calculate the firing rates based on the input data.
+    Then, calculate the firing rates per time step.
+    Next, store the spike trains over time.
     """
 
-    def __init__(self, data, time, rate_max=None, data_max_val= 255):
+    def __init__(self, data, time, rate_max=5, range_data=(0, 255)):
+
         self.time = time
         self.data = data
+        self.rate =  rate_max
+        self.max_val = range_data[1]
 
-        if rate_max is None:
-            self.rate_max =  time
-        else:
-            self.rate_max = rate_max
-        self.data_max_val = data_max_val
-        self.r = 0.06
 
     def encode(self):
 
+        rate_i = self.data * self.rate / self.max_val
+        rate_dt = rate_i  / self.time
+        encoded_data = torch.zeros(self.time, *self.data.shape)   # generate spike patterns randomely based on firing rate from input stimuli
+        prob = torch.rand_like(encoded_data)
+        for i in range(self.time):
+            encoded_data[i] = torch.less(prob[i], rate_dt)
 
-        r_x = self.data * self.rate_max / self.data_max_val
-        r_x_dt = r_x  / self.time
-        encoded_data = torch.zeros(self.time, *self.data.shape)
-        p = torch.rand_like(encoded_data)
-        for t in range(self.time):
-            encoded_data[t] = torch.less(p[t], r_x_dt)
 
-        spikes = torch.zeros(encoded_data.shape[0], encoded_data.shape[1]*encoded_data.shape[2])
+        spikes = torch.zeros(encoded_data.shape[0], encoded_data.shape[1]*encoded_data.shape[2])  # reshape spike pattern to 2D array
         for i in range(spikes.shape[0]):
             for j in range(encoded_data.shape[1]):
                 for k in range(encoded_data.shape[2]):
                     spikes[i][j*encoded_data.shape[2]+k] = encoded_data[i][j][k]
+
         return spikes
