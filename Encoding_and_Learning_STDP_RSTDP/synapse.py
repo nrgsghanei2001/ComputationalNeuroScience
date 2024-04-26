@@ -1,12 +1,16 @@
 from pymonntorch import Behavior
 import torch
-
+import random
 
 class SynFun(Behavior):
 	def initialize(self, sg):
 		sg.W = sg.matrix(mode=0)
 		sg.I = sg.dst.vector()
 		self.is_inhibitory = self.parameter("is_inhibitory", False)
+
+		for i in range(sg.W.shape[0]):
+			for j in range(sg.W.shape[1]):
+				sg.W[i][j] = random.randint(20, 40)
 
 	def forward(self, sg):
 		sg.I = torch.sum(sg.W[sg.src.spike], axis=0)

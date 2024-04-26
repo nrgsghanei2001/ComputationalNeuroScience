@@ -1,25 +1,31 @@
 from pymonntorch import Behavior
 import torch
+import numpy as np
 
 
 class STDP(Behavior):
     def initialize(self, sg):
-        self.lr = self.parameter("lr", [5, 5])
-        self.weight_decay = self.parameter("wd", 2)
+        self.lr = self.parameter("lr", [10, 15])
+        self.weight_decay = self.parameter("wd", 80)
+        self.wmin = self.parameter("wmin", 10)
+        self.wmax = self.parameter("wmax", 50)
 
 
     def forward(self, sg):
 
         mask = torch.ones(*sg.W.size())
-        src_s = self.mask_spike_trace(sg.src.spike, mask)
-        dst_s = sg.dst.spike * mask
-        src_t = self.mask_spike_trace(sg.src.trace, mask)
-        dst_t = sg.dst.trace * mask
+        src_s = self.mask_spike_trace(sg.src.spike, mask)  # source spikes
+        dst_s = sg.dst.spike * mask                        # destination spikes
+        src_t = self.mask_spike_trace(sg.src.trace, mask)  # source trace
+        dst_t = sg.dst.trace * mask                        # destination trace
         
         A1 = self.lr[0] * src_s * dst_t
         A2 = self.lr[1] * dst_s * src_t
-        sg.W += -A1 + A2
-        # print(sg.W)
+
+        # sg.W += (-A1 + A2)
+        sg.W += -(sg.W/self.weight_decay) +(-A1 + A2)
+        sg.W = np.clip(sg.W, self.wmin, self.wmax)
+
 
     def mask_spike_trace(self, inp, mask):
         if len(inp.size()) > 1:
