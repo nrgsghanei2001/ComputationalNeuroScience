@@ -29,23 +29,55 @@ class STDP(Behavior):
         sg.W += -(sg.W/self.weight_decay) +(-A1 + A2)
         sg.W = np.clip(sg.W, self.wmin, self.wmax)
         
-        print("==================")
-        print(src_s)
-        print(dst_s)
-        # print(dst_t)
-        print(-A1)
-        print(sg.W)
-        print("==================")
+        # print("==================")
+        # print(src_s)
+        # print(dst_s)
+        # # print(dst_t)
+        # print(-A1)
+        # print(sg.W)
+        # print("==================")
 
         self.apply_lateral_inhibition(sg)
 
     
     def apply_lateral_inhibition(self, sg):
         
-        if sg.dst.spike[0] and (not sg.dst.spike[1]):
-            sg.dst.I[1] -= 5
-        elif sg.dst.spike[1] and (not sg.dst.spike[0]):
-            sg.dst.I[0] -= 20
+        if sg.dst.spike[0] and (not (sg.dst.spike[1])):
+            sg.dst.I[1] -= 15
+            # sg.dst.I[2] -= 15
+            # sg.dst.I[3] -= 15
+            # sg.dst.I[4] -= 15
+            # sg.dst.I[5] -= 15
+        elif sg.dst.spike[1] and (not (sg.dst.spike[0])):
+            sg.dst.I[0] -= 5
+            # sg.dst.I[2] -= 15
+            # sg.dst.I[3] -= 15
+            # sg.dst.I[4] -= 15
+            # sg.dst.I[5] -= 15
+        # elif sg.dst.spike[2] and (not (sg.dst.spike[0] and sg.dst.spike[1] and sg.dst.spike[3] and sg.dst.spike[4] and sg.dst.spike[5])):
+        #     sg.dst.I[0] -= 5
+        #     sg.dst.I[1] -= 15
+        #     sg.dst.I[3] -= 15
+        #     sg.dst.I[4] -= 15
+        #     sg.dst.I[5] -= 15
+        # elif sg.dst.spike[3] and (not (sg.dst.spike[0] and sg.dst.spike[2] and sg.dst.spike[1] and sg.dst.spike[4] and sg.dst.spike[5])):
+        #     sg.dst.I[0] -= 5
+        #     sg.dst.I[2] -= 15
+        #     sg.dst.I[1] -= 15
+        #     sg.dst.I[4] -= 15
+        #     sg.dst.I[5] -= 15
+        # elif sg.dst.spike[4] and (not (sg.dst.spike[0] and sg.dst.spike[2] and sg.dst.spike[1] and sg.dst.spike[3] and sg.dst.spike[5])):
+        #     sg.dst.I[0] -= 5
+        #     sg.dst.I[2] -= 15
+        #     sg.dst.I[1] -= 15
+        #     sg.dst.I[3] -= 15
+        #     sg.dst.I[5] -= 15
+        # elif sg.dst.spike[5] and (not (sg.dst.spike[0] and sg.dst.spike[2] and sg.dst.spike[1] and sg.dst.spike[3] and sg.dst.spike[4])):
+        #     sg.dst.I[0] -= 5
+        #     sg.dst.I[2] -= 15
+        #     sg.dst.I[1] -= 15
+        #     sg.dst.I[3] -= 15
+        #     sg.dst.I[4] -= 15
 
 
     # def apply_k_winners_take_all(self, sg):
