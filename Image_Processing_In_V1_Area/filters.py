@@ -59,6 +59,7 @@ def GaborFilter(
     theta,
     sigma,
     gamma,
+    phi=0,
     step=1.0,
     zero_mean=False,
     one_sum=False,
