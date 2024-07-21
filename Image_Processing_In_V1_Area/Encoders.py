@@ -130,3 +130,45 @@ class PoissonEncoding:
                     spikes[i][j*encoded_data.shape[2]+k] = encoded_data[i][j][k]
 
         return spikes
+    
+
+class Poisson(torch.nn.Module):
+    """
+    Poisson encoding.
+    Input values should be between 0 and 1.
+    The intervals between two spikes are picked using Poisson Distribution.
+
+    Args:
+        time_window (int): The interval of the coding.
+        ratio (float): A scale factor for probability of spiking.
+    """
+
+    def __init__(self, time_window, ratio):
+        self.time_window = time_window
+        self.ratio = ratio
+
+    def __call__(self, img):
+        if type(img) is tuple:
+            return tuple([self(sub_inp) for sub_inp in img])
+
+        # https://github.com/BindsNET/bindsnet/blob/master/bindsnet/encoding/encodings.py
+        original_shape, original_size = img.shape, img.numel()
+        flat_img = img.view((-1,)) * self.ratio
+        non_zero_mask = flat_img != 0
+
+        flat_img[non_zero_mask] = 1 / flat_img[non_zero_mask]
+
+        dist = torch.distributions.Poisson(rate=flat_img, validate_args=False)
+        intervals = dist.sample(sample_shape=torch.Size([self.time_window]))
+        intervals[:, non_zero_mask] += (intervals[:, non_zero_mask] == 0).float()
+
+        times = torch.cumsum(intervals, dim=0).long()
+        times[times >= self.time_window + 1] = 0
+
+        spikes = torch.zeros(
+            self.time_window + 1, original_size, device=img.device, dtype=torch.bool
+        )
+        spikes[times, torch.arange(original_size, device=img.device)] = True
+        spikes = spikes[1:]
+
+        return spikes.view(self.time_window, *original_shape)
